@@ -8,11 +8,11 @@
 
 网络结构
 
-<img src = "assets/framework.png" style="zoom:80%;" >
+<img src = "img/README_img/framework.png" style="zoom:80%;" >
 
 原结果
 
-<img src = "assets/LOL_table.png">
+<img src = "img/README_img/LOL_table.png">
 
 
 
