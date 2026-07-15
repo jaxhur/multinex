@@ -49,8 +49,8 @@ cd multinex
 
 conda create -n multinex python=3.9 -y
 conda activate multinex
-# With Pip
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+pip install torch==2.8.0 torchvision==0.23.0 torchaudio==2.8.0 --index-url https://download.pytorch.org/whl/cu128
 
 pip install -r requirements.txt
 pip install -e .
@@ -59,6 +59,16 @@ pip install -e .
 > **Please Note:** `python setup.py develop` has been deprecated. As a result, the above installation is recommended. With this in mind, using `basicsr` must be done as `python -m basicsr.<filename>` rather than `python basicsr/<filename>.py`.
 
 
+
+```
+git pull --ff-only origin main
+
+BASICSR_EXT=False python -m pip install \
+  --editable . \
+  --force-reinstall \
+  --no-deps \
+  --no-build-isolation
+```
 
 
 
@@ -250,7 +260,6 @@ python Enhancement/test.py --opt Options/MultinexNano_LOL-v2-synthetic.yaml --we
 
 
 &nbsp;
-
 
 
 
