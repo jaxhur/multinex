@@ -157,8 +157,9 @@ python Enhancement/test.py --opt Options/Multinex_LOL-v1.yaml --weights pretrain
 
 训练
 
-- batch_size = 
-- patch_size =
+- batch_size = 8
+- patch_size =256
+- 5080：耗时不太准，显示要18h，但是实际上也不一定，感觉差不多要在12h
 
 ```
 # Multinex on LOL-v1

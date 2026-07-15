@@ -1,6 +1,7 @@
 import datetime
 import logging
 import time
+from collections import deque
 
 from .dist_util import get_dist_info, master_only
 
@@ -13,7 +14,8 @@ class MessageLogger():
     Args:
         opt (dict): Config. It contains the following keys:
             name (str): Exp name.
-            logger (dict): Contains 'print_freq' (str) for logger interval.
+            logger (dict): Contains ``print_freq`` and an optional
+                ``eta_window`` measured in logging intervals.
             train (dict): Contains 'total_iter' (int) for total iters.
             use_tb_logger (bool): Use tensorboard logger.
         start_iter (int): Start iter. Default: 1.
@@ -27,7 +29,17 @@ class MessageLogger():
         self.max_iters = opt['train']['total_iter']
         self.use_tb_logger = opt['logger']['use_tb_logger']
         self.tb_logger = tb_logger
-        self.start_time = time.time()
+        self.start_time = time.perf_counter()
+        self.last_log_time = self.start_time
+        self.last_log_iter = start_iter
+
+        # Keep enough log intervals to cover one validation cycle by default.
+        # This smooths CUDA warm-up while retaining validation/checkpoint costs.
+        val_freq = opt.get('val', {}).get('val_freq', self.interval)
+        default_eta_window = max(
+            1, int((val_freq + self.interval - 1) // self.interval))
+        eta_window = int(opt['logger'].get('eta_window', default_eta_window))
+        self.time_window = deque(maxlen=max(1, eta_window))
         self.logger = get_root_logger()
 
     @master_only
@@ -59,11 +71,28 @@ class MessageLogger():
             iter_time = log_vars.pop('time')
             data_time = log_vars.pop('data_time')
 
-            total_time = time.time() - self.start_time
-            time_sec_avg = total_time / (current_iter - self.start_iter + 1)
-            eta_sec = time_sec_avg * (self.max_iters - current_iter - 1)
+            current_time = time.perf_counter()
+            elapsed_sec = current_time - self.start_time
+            interval_iters = current_iter - self.last_log_iter
+            if interval_iters > 0:
+                interval_sec = current_time - self.last_log_time
+                self.time_window.append((interval_sec, interval_iters))
+                self.last_log_time = current_time
+                self.last_log_iter = current_iter
+
+            # A rolling wall-clock average drops one-time startup overhead but
+            # still includes periodic logging, validation and checkpoint work.
+            if self.time_window:
+                window_sec = sum(sample[0] for sample in self.time_window)
+                window_iters = sum(sample[1] for sample in self.time_window)
+                time_sec_avg = window_sec / window_iters
+            else:
+                time_sec_avg = iter_time
+            eta_sec = time_sec_avg * max(0, self.max_iters - current_iter)
+            elapsed_str = str(
+                datetime.timedelta(seconds=int(elapsed_sec)))
             eta_str = str(datetime.timedelta(seconds=int(eta_sec)))
-            message += f'[eta: {eta_str}, '
+            message += f'[elapsed: {elapsed_str}, eta: {eta_str}, '
             message += f'time (data): {iter_time:.3f} ({data_time:.3f})] '
 
         # other items, especially losses
