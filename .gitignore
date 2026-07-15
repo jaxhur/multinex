@@ -1,7 +1,8 @@
 multinex_pkg
 
 # ignored folders
-data
+data/LOL-v1/
+data/LOL-v2/
 Detection/data
 Detection/weights
 experiments

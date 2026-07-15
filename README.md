@@ -44,13 +44,13 @@
 创建环境：
 
 ```bash
+git clone https://github.com/jaxhur/multinex.git
+cd multinex
+
 conda create -n multinex python=3.9 -y
 conda activate multinex
 # With Pip
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
-
-pip install matplotlib scikit-learn scikit-image opencv-python yacs joblib natsort h5py tqdm tensorboard
-pip install einops gdown addict future lmdb numpy pyyaml requests scipy yapf lpips thop timm pytorch_msssim
 
 pip install -r requirements.txt
 pip install -e .
@@ -68,8 +68,8 @@ LOLv1、LOLv2-real、LOLv2-syn
 
 ```
 apt install -y unzip
-mkdir datasets
-cd ./datasets
+mkdir data
+cd ./data
 # LOL-v1
 gdown "https://drive.google.com/uc?id=1mAN3ll5wWwt1Xz0C7uio31-NJu-50S8Z"
 # LOL-v2重命名
@@ -127,32 +127,6 @@ data/
 - 280 KB for Multinex
 - 20 KB for Multinex-Nano
 
-Multinex
-
-```bash
-# LOL-v1
-python Enhancement/test.py --opt Options/Multinex_LOL-v1.yaml --weights pretrained_weights/Multinex_LOLv1.pth --dataset LOL_v1
-
-# LOL-v2-real
-python Enhancement/test.py --opt Options/Multinex_LOL-v2-real.yaml --weights pretrained_weights/Multinex_LOLv2_real.pth --dataset LOL_v2_real
-
-# LOL-v2-synthetic
-python Enhancement/test.py --opt Options/Multinex_LOL-v2-syn.yaml --weights pretrained_weights/Multinex_LOLv2_syn.pth --dataset LOL_v2_synthetic
-```
-
-Multinex-Nano
-
-```bash
-# LOL-v1
-python Enhancement/test.py --opt Options/MultinexNano_LOLv1.yaml --weights pretrained_weights/MultinexNano_LOLv1.pth --dataset LOL_v1
-
-# LOL-v2-real
-python Enhancement/test.py --opt Options/MultinexNano_LOL-v2-real.yaml --weights pretrained_weights/MultinexNano_LOLv2_real.pth --dataset LOL_v2_real
-
-# LOL-v2-synthetic
-python Enhancement/test.py --opt Options/MultinexNano_LOL-v2-synthetic.yaml --weights pretrained_weights/MultinexNano_LOLv2_syn.pth --dataset LOL_v2_synthetic
-```
-
 Self-ensemble testing strategy：For stronger results, add `--self_ensemble` argument.
 
 ```bash
@@ -161,11 +135,13 @@ python Enhancement/test.py --opt Options/Multinex_LOL-v1.yaml --weights pretrain
 
 测试产物
 
-```
+- **Note:** For best results, use  `val.val_freq: 5` in the yaml configs under `Options/` directory.
 
 ```
 
-**Note:** For best results, use  `val.val_freq: 5` in the yaml configs under `Options/` directory.
+```
+
+
 
 # LOLv1
 
@@ -192,6 +168,9 @@ python -m basicsr.train --opt Options/MultinexNano_LOLv1.yaml
 
 ```
 python Enhancement/test.py --opt Options/Multinex_LOL-v1.yaml --weights experiments/Multinex_LOL-v1/models/best_G.pth --dataset LOL_v1
+
+# nano
+python Enhancement/test.py --opt Options/MultinexNano_LOLv1.yaml --weights pretrained_weights/MultinexNano_LOLv1.pth --dataset LOL_v1
 ```
 
 
@@ -220,7 +199,11 @@ python -m basicsr.train --opt Options/MultinexNano_LOL-v2-real.yaml
 - FLOPS(G)：
 
 ```
+# 
+python Enhancement/test.py --opt Options/Multinex_LOL-v2-real.yaml --weights pretrained_weights/Multinex_LOLv2_real.pth --dataset LOL_v2_real
 
+# nano
+python Enhancement/test.py --opt Options/MultinexNano_LOL-v2-real.yaml --weights pretrained_weights/MultinexNano_LOLv2_real.pth --dataset LOL_v2_real
 ```
 
 
@@ -251,7 +234,11 @@ python -m basicsr.train --opt Options/MultinexNano_LOL-v2-synthetic.yaml
 - FLOPS(G)：
 
 ```
+python Enhancement/test.py --opt Options/Multinex_LOL-v2-syn.yaml --weights pretrained_weights/Multinex_LOLv2_syn.pth --dataset LOL_v2_synthetic
 
+
+# nano
+python Enhancement/test.py --opt Options/MultinexNano_LOL-v2-synthetic.yaml --weights pretrained_weights/MultinexNano_LOLv2_syn.pth --dataset LOL_v2_synthetic
 ```
 
 
