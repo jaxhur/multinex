@@ -51,7 +51,8 @@ class HybridLoss(nn.Module):
             print('not using MSE Loss')
         
         if w_perc != 0:
-            self.perceptual_loss_model = VGGPerceptualLoss
+            # VGG 依赖运行时设备，因此在首次前向传播时创建。
+            self.perceptual_loss_model = None
         else:
             print('not using Perc Loss')
 
