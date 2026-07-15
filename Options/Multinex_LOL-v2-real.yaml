@@ -165,7 +165,7 @@ val:
 
 # logging settings
 logger:
-  print_freq: 500
+  print_freq: 20
   save_checkpoint_freq: !!float 1000
   use_tb_logger: true
   wandb:
