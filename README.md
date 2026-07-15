@@ -1,121 +1,88 @@
-<div align="center">
-<p align="center"> <img src="assets/Multinex_logo.png" width="100px"> </p>
 
-# Multinex: Lightweight Low-Light Image Enhancement via Multi-prior Retinex (CVPR 2026)
 
-**[Alexandru Brateanu](https://albrateanu.github.io/), [Tingting Mu](https://personalpages.manchester.ac.uk/staff/tingting.mu/Site/About_Me.html), [Codruta O. Ancuti](https://ro.linkedin.com/in/codruta), [Cosmin Ancuti](https://www.linkedin.com/in/cosmin-ancuti-86b3872/)**
+# Multinex论文
 
-[![Paper](https://img.shields.io/badge/Abstract-arXiv-green)](https://arxiv.org/abs/2604.10359)
-[![Paper](https://img.shields.io/badge/PDF-arXiv-orange)](https://arxiv.org/pdf/2604.10359)
-[![Project Page](https://img.shields.io/badge/Project-Page-blue)](https://albrateanu.github.io/Multinex/)
-[![Project Page](https://img.shields.io/badge/PDF-Supplementary-yellow)](https://drive.google.com/file/d/1-bRljca_GG1wvwJYP56bTHhpJZkJmulB/view)
-![License: Non-Commercial Research](https://img.shields.io/badge/license-non--commercial%20research-red)
+原仓库：[code](https://github.com/albrateanu/multinex/)
 
-**Consider giving our repository a :star: star :star: if you find it useful!**
-</div>
+- **Please Note:** Installation and running instructions for Object Detection on ExDark are available under `Detection/README.md`.
 
-### News
-- **20.06.2026:** Clarified repository licensing and commercial-use terms. Multinex is source-available for non-commercial research and educational use under PolyForm Noncommercial 1.0.0; commercial use requires separate written permission.
-- **25.04.2026**: Model weights for object detection on ExDark are now available for download. Read `Detection/README.md` for more details.
-- **14.04.2026 :** [Pre-print](https://arxiv.org/abs/2604.10359), [code](https://github.com/albrateanu/multinex/), and [paper page](https://albrateanu.github.io/Multinex/) for **Multinex** (accepted at CVPR 2026) are released!
+网络结构
 
-<div align="justify">
+<img src = "assets/framework.png" style="zoom:80%;" >
 
-> **Abstract:** *Low-light image enhancement (LLIE) aims to restore natural visibility, color fidelity, and structural detail under severe illumination degradation. State-of-the-art (SOTA) LLIE techniques often rely on large models and multi-stage training, limiting practicality for edge deployment. Moreover, their dependence on a single color space introduces instability and visible exposure or color artifacts. To address these, we propose Multinex, an ultra-lightweight structured framework that integrates multiple fine-grained representations within a principled Retinex residual formulation. It decomposes an image into illumination and color prior stacks derived from distinct analytic representations, and learns to fuse these representations into luminance and reflectance adjustments required to correct exposure. By prioritizing enhancement over reconstruction and exploiting lightweight neural operations, Multinex significantly reduces computational cost, exemplified by its lightweight (45K parameters) and nano (0.7K parameters) versions. Extensive benchmarks show that all lightweight variants significantly outperform their corresponding lightweight SOTA models, and reach comparable performance to heavy models.*
-
-</div>
-
-## Network Architecture
-
-<img src = "assets/framework.png">
-
-### Introduction
-This source-available repository contains the official implementation of **Multinex** for low-light image enhancement. It provides training and testing code for paired-image enhancement on standard benchmarks, together with pretrained checkpoints for direct evaluation.
-
-**Please Note:** Installation and running instructions for Object Detection on ExDark are available under `Detection/README.md`.
-
-## Results
-Quantitative results for _Enhancement_ (LOL-v1, LOL-v2, MEF, DICM, LIME, NPE), and _Detection_ (ExDark)
-
-<details>
-<summary><strong>LOL Datasets</strong> (click to expand) </summary>
+原结果
 
 <img src = "assets/LOL_table.png">
-</details>
-
-<details>
-<summary><strong>No-Reference Datasets</strong> (click to expand) </summary>
-
-<img src = "assets/NoRef_table.png">
-</details>
 
 
-<details>
-<summary><strong>Object Detection on ExDark</strong> (click to expand) </summary>
 
-<img src = "assets/ExDark_table.png">
-</details>
+# 优化旧代码仓库的提示词
 
-&nbsp;
+```
+帮我完成
 
-&nbsp;
+- 根据当前data目录，修改对应的数据集路径
+- 我使用远程服务器，不要看本地环境
+- 补充需要的依赖
+- 暂时不使用预训练权重
+- 能够【能自动恢复最新 `.state`】就行了，不需要【在仅有 `*_G.pth` 时退化为仅权重恢复】
+- 训练时的周期性验证需要输出pSNR和SSIM
+- 训练时额外输出独立的 `logs/train.log`、`logs/val.log`；续训时训练日志不需要追加模式
+- tb输出到根目录 `tb_logger/<配置名>/`也行，不需要改
+- 【生成 `net_g_<iter>.pth`、`net_g_latest.pth`；best 位于实验根目录且带指标名，不是 `models/latest_G.pth`、`best_G.pth`、`<iter>_G.pth`】你改一下
+- 【已计算 PSNR、RGB SSIM、LPIPS-alex，但只打印到终端】要打印到终端并保存到metric.csv
+- 【会保存增强图，但目录是 `results/...`，不是 `test_result/<数据集>/enhanced/`】修改一下目录
+- 【没有 `test.log`，没有最终要求的 `metric.csv`】修改一下
+- 【有独立复杂度脚本，但 THOP 的 MACs 被直接标成 GFLOPs】其他项目的常见做法到底是什么，我看好像确实大多数是使用MACs的，要统一口径啊
+- 【测试脚本把 LQ、GT 分别排序后直接 `zip`，没有检查同名、缺失、重复或数量差异】数据集是准备好的，直接排序应该也行吧
+```
 
-## 1. Create Environment
 
-We use a PyTorch 2 environment.
 
-### 1.1 Create the environment
+# 创建环境
+
+创建环境：
 
 ```bash
 conda create -n multinex python=3.9 -y
 conda activate multinex
-```
-
-### 1.2 Install PyTorch 2
-
-Example for CUDA 11.8:
-
-```bash
 # With Pip
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 
-# With Conda
-conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
-```
-
-Change this to accommodate your CUDA version requirements.
-
-### 1.3 Install dependencies
-
-```bash
 pip install matplotlib scikit-learn scikit-image opencv-python yacs joblib natsort h5py tqdm tensorboard
 pip install einops gdown addict future lmdb numpy pyyaml requests scipy yapf lpips thop timm pytorch_msssim
-```
 
-### 1.4 Install BasicSR
-
-```bash
+pip install -r requirements.txt
 pip install -e .
 ```
 
-**Please Note:** `python setup.py develop` has been deprecated. As a result, the above installation is recommended. With this in mind, using `basicsr` must be done as `python -m basicsr.<filename>` rather than `python basicsr/<filename>.py`.
+> **Please Note:** `python setup.py develop` has been deprecated. As a result, the above installation is recommended. With this in mind, using `basicsr` must be done as `python -m basicsr.<filename>` rather than `python basicsr/<filename>.py`.
 
-&nbsp;
 
-## 2. Prepare Dataset
 
-Download the LOLv1 and LOLv2 datasets:
 
-LOLv1 - [Google Drive](https://drive.google.com/file/d/1vhJg75hIpYvsmryyaxdygAWeHuiY_HWu/view?usp=sharing)
 
-LOLv2 - [Google Drive](https://drive.google.com/file/d/1OMfP6Ks2QKJcru1wS2eP629PgvKqF2Tw/view?usp=sharing)
+# 数据集
 
-Organize the datasets as follows:
+LOLv1、LOLv2-real、LOLv2-syn
 
-<details close>
-<summary><b>Dataset structure</b></summary>
+```
+apt install -y unzip
+mkdir datasets
+cd ./datasets
+# LOL-v1
+gdown "https://drive.google.com/uc?id=1mAN3ll5wWwt1Xz0C7uio31-NJu-50S8Z"
+# LOL-v2重命名
+gdown "https://drive.google.com/uc?id=1L0UnJg6gZ4Eb7It2EuNxP0L3lQNmKMaP"
 
-```text
+unzip LOL-v1.zip -d LOL-v1
+unzip LOL-v2-renamed.zip -d LOL-v2
+
+rm LOL-v1.zip LOL-v2-renamed.zip
+cd ../
+```
+
+```
 data/
 ├── LOLv1/
 │   ├── Train/
@@ -141,15 +108,26 @@ data/
             └── Normal/
 ```
 
-</details>
 
-&nbsp;
 
-## 3. Testing
+# 训练
 
-Model weights are available under `pretrained_weights/`, and are contained within the repository due to their small file sizes (280 KB for Multinex, 20 KB for Multinex-Nano). These weights are Model Materials covered by the non-commercial license notice in [`pretrained_weights/README.md`](pretrained_weights/README.md) and [`MODEL_CARD.md`](MODEL_CARD.md).
+训练产物
 
-### Multinex
+```
+
+```
+
+
+
+# 测试
+
+预训练模型：`pretrained_weights/`
+
+- 280 KB for Multinex
+- 20 KB for Multinex-Nano
+
+Multinex
 
 ```bash
 # LOL-v1
@@ -162,7 +140,7 @@ python Enhancement/test.py --opt Options/Multinex_LOL-v2-real.yaml --weights pre
 python Enhancement/test.py --opt Options/Multinex_LOL-v2-syn.yaml --weights pretrained_weights/Multinex_LOLv2_syn.pth --dataset LOL_v2_synthetic
 ```
 
-### Multinex-Nano
+Multinex-Nano
 
 ```bash
 # LOL-v1
@@ -175,89 +153,117 @@ python Enhancement/test.py --opt Options/MultinexNano_LOL-v2-real.yaml --weights
 python Enhancement/test.py --opt Options/MultinexNano_LOL-v2-synthetic.yaml --weights pretrained_weights/MultinexNano_LOLv2_syn.pth --dataset LOL_v2_synthetic
 ```
 
-- #### Self-ensemble testing strategy
-
-For stronger results, add `--self_ensemble` argument.
+Self-ensemble testing strategy：For stronger results, add `--self_ensemble` argument.
 
 ```bash
 python Enhancement/test.py --opt Options/Multinex_LOL-v1.yaml --weights pretrained_weights/Multinex_LOLv1.pth --dataset LOL_v1 --self_ensemble
 ```
 
-&nbsp;
+测试产物
 
-## 4. Training
+```
 
-Training is launched through the BasicSR entrypoint.
+```
 
-```bash
+**Note:** For best results, use  `val.val_freq: 5` in the yaml configs under `Options/` directory.
+
+# LOLv1
+
+训练
+
+- batch_size = 
+- patch_size =
+
+```
 # Multinex on LOL-v1
 python -m basicsr.train --opt Options/Multinex_LOL-v1.yaml
 
+# Multinex-Nano on LOL-v1
+python -m basicsr.train --opt Options/MultinexNano_LOLv1.yaml
+```
+
+测试
+
+- PSNR：
+- SSIM：
+- LPIPS：
+- 参数量(M)：
+- FLOPS(G)：
+
+```
+python Enhancement/test.py --opt Options/Multinex_LOL-v1.yaml --weights experiments/Multinex_LOL-v1/models/best_G.pth --dataset LOL_v1
+```
+
+
+
+# LOLv2-real
+
+训练
+
+- batch_size = 
+- patch_size =
+
+```
 # Multinex on LOL-v2-real
 python -m basicsr.train --opt Options/Multinex_LOL-v2-real.yaml
 
-# Multinex on LOL-v2-synthetic
-python -m basicsr.train --opt Options/Multinex_LOL-v2-syn.yaml
-
-# Multinex-Nano on LOL-v1
-python -m basicsr.train --opt Options/MultinexNano_LOLv1.yaml
-
 # Multinex-Nano on LOL-v2-real
 python -m basicsr.train --opt Options/MultinexNano_LOL-v2-real.yaml
+```
+
+测试
+
+- PSNR：
+- SSIM：
+- LPIPS：
+- 参数量(M)：
+- FLOPS(G)：
+
+```
+
+```
+
+
+
+
+
+# LOLv2-syn
+
+训练
+
+- batch_size = 
+- patch_size =
+
+```
+# Multinex on LOL-v2-synthetic
+python -m basicsr.train --opt Options/Multinex_LOL-v2-syn.yaml
 
 # Multinex-Nano on LOL-v2-synthetic
 python -m basicsr.train --opt Options/MultinexNano_LOL-v2-synthetic.yaml
 ```
 
-**Note:** For best results, use  `val.val_freq: 5` in the yaml configs under `Options/` directory.
+测试
+
+- PSNR：
+- SSIM：
+- LPIPS：
+- 参数量(M)：
+- FLOPS(G)：
+
+```
+
+```
+
+
+
+
+
+
+
+
 
 &nbsp;
 
-## 5. Citation
 
-Cite our work if Multinex is useful to your research.
 
-```
-@inproceedings{multinex2026,
-  title     = {Multinex: Lightweight Low-light Image Enhancement via Multi-prior Retinex},
-  author    = {Alexandru Brateanu and Tingting Mu and Codruta O. Ancuti and Cosmin Ancuti},
-  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-  year      = {2026}
-}
-```
 
-## License
-
-Copyright (c) 2026 Alexandru Brateanu. Multinex is source-available for non-commercial research and educational use under the [PolyForm Noncommercial License 1.0.0](LICENSE). It is not open-source software in the OSI sense, and commercial use is not permitted without a separate written license.
-
-The public non-commercial license applies to original Multinex source code, model definitions, documentation, pretrained weights, checkpoints, configuration files, and related model materials authored by Alexandru Brateanu, unless otherwise stated. Third-party components remain under their original licenses; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
-For clarity, "Model Materials" include model weights, checkpoints, adapters, LoRAs, tokenizer files, configuration files, architecture code, training and inference code, documentation, and any modified, merged, quantized, distilled, or fine-tuned versions. See [MODEL_CARD.md](MODEL_CARD.md) for the model-specific license notice.
-
-You may use, modify, and share Multinex only for permitted non-commercial purposes, such as:
-
-- academic research
-- personal study
-- non-commercial experimentation
-- reproducibility and benchmarking for non-commercial research
-- teaching and educational use
-
-Commercial use includes, but is not limited to:
-
-- use by or for a for-profit company
-- integration into a commercial product or service
-- internal company research, prototyping, evaluation, or benchmarking
-- paid consulting or client work
-- SaaS/API deployment
-- use in a startup, product pipeline, or revenue-generating system
-- training, fine-tuning, or deploying models for commercial advantage
-- use of Model Materials in or to support any customer deliverable, commercial R&D, hosted API, internal business process, or revenue-generating workflow
-
-Commercial access is available only through collaboration, partnership, or a separate written commercial license. Commercial evaluation or production use requires a separate written agreement. See [COMMERCIAL_USE.md](COMMERCIAL_USE.md) for commercial collaboration options.
-
-For commercial collaboration, contact:
-
-Alexandru Brateanu<br>
-Email: albrateanu@gmail.com
-
-This repository is provided as research software. No warranty is provided. See [LICENSE](LICENSE) for the full license terms and [RELEASE_NOTES.md](RELEASE_NOTES.md) for the license-clarification release note.

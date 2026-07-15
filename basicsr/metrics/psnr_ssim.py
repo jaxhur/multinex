@@ -298,9 +298,13 @@ def calculate_ssim(img1,
     # print('.._skimage',
     #       skimage.metrics.structural_similarity(img1, img2, data_range=255., multichannel=True))
     max_value = 1 if img1.max() <= 1 else 255
-    with torch.no_grad():
-        final_ssim = _ssim_3d(img1, img2, max_value)
-        ssims.append(final_ssim)
+    if max_value == 1:
+        # Reuse the MATLAB-compatible per-channel implementation by scaling
+        # normalized tensors to its expected [0, 255] range.
+        img1 = img1 * 255.0
+        img2 = img2 * 255.0
+    for channel in range(img1.shape[2]):
+        ssims.append(_ssim(img1[..., channel], img2[..., channel]))
 
     # for i in range(img1.shape[2]):
     #     ssims_before.append(_ssim(img1, img2))

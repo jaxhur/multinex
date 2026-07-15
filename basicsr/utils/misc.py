@@ -183,8 +183,10 @@ def check_resume(opt, resume_iter):
             basename = network.replace('network_', '')
             if opt['path'].get('ignore_resume_networks') is None or (
                     basename not in opt['path']['ignore_resume_networks']):
+                checkpoint_name = (f'{resume_iter}_G.pth' if basename == 'g'
+                                   else f'{resume_iter}_{basename.upper()}.pth')
                 opt['path'][name] = osp.join(
-                    opt['path']['models'], f'net_{basename}_{resume_iter}.pth')
+                    opt['path']['models'], checkpoint_name)
                 logger.info(f"Set {name} to {opt['path'][name]}")
 
 

@@ -137,8 +137,11 @@ def _count_params(model):
 
 def _compute_complexity(model, input_res=(3, 256, 256), device='cpu'):
     """
-    Returns a dict with available complexity metrics.
-    Tries THOP then ptflops. May return subset if packages not installed.
+    Return THOP MACs and explicitly converted FLOPs for one forward pass.
+
+    THOP reports multiply-accumulate operations (MACs). This project records
+    both GMACs and the common ``1 MAC = 2 FLOPs`` conversion so paper tables
+    cannot silently mix the two conventions.
     """
     results = {}
     model = model.to(device).eval()
@@ -149,9 +152,11 @@ def _compute_complexity(model, input_res=(3, 256, 256), device='cpu'):
         from thop import profile
         with torch.no_grad():
             macs, _ = profile(model, inputs=(x,), verbose=False)
-        results['gflops'] = macs / 1e9
-    except Exception:
-        pass
+        results['gmacs'] = macs / 1e9
+        results['gflops'] = (2.0 * macs) / 1e9
+        results['tflops'] = (2.0 * macs) / 1e12
+    except Exception as exc:
+        results['error'] = str(exc)
 
     return results
 
@@ -350,7 +355,6 @@ def main():
     if 'network_g' not in opt:
         raise KeyError("Options must contain 'network_g' to build the generator.")
     net_g = _build_net_from_opt(opt)
-    net_g = net_g.to('cuda').eval()
 
     # Params
     n_params = _count_params(net_g)
@@ -358,6 +362,7 @@ def main():
 
     # Device
     device = 'cuda' if (args.device == 'cuda' and torch.cuda.is_available()) else 'cpu'
+    net_g = net_g.to(device).eval()
 
     # Resolutions list
     res_list = _parse_resolutions(args.resolutions)
@@ -390,7 +395,9 @@ def main():
 
         rows.append({
             'res': f"{h}x{w}",
+            'gmacs': comp.get('gmacs', None),
             'gflops': comp.get('gflops', None),
+            'tflops': comp.get('tflops', None),
             'ms_mean': timing['ms_mean'],
             'ms_med': timing['ms_median'],
             'ms_p95': timing['ms_p95'],
@@ -402,14 +409,16 @@ def main():
     # Pretty print table
     print("\nPer-resolution results:")
     header = (
-        f"{'Resolution':>12} | {'GFLOPs':>10} | "
+        f"{'Resolution':>12} | {'GMACs':>10} | {'GFLOPs(2x)':>12} | {'TFLOPs':>10} | "
         f"{'mean(ms)':>9} | {'median':>8} | {'p95':>8} | {'p99':>8} | {'std':>8} | {'FPS':>8}"
     )
     print(header)
     print("-" * len(header))
     for r in rows:
+        gmacs = f"{r['gmacs']:.3f}" if r['gmacs'] is not None else '--'
         gflops = f"{r['gflops']:.3f}" if r['gflops'] is not None else '--'
-        print(f"{r['res']:>12} | {gflops:>10} | "
+        tflops = f"{r['tflops']:.6f}" if r['tflops'] is not None else '--'
+        print(f"{r['res']:>12} | {gmacs:>10} | {gflops:>12} | {tflops:>10} | "
               f"{r['ms_mean']:>9.3f} | {r['ms_med']:>8.3f} | {r['ms_p95']:>8.3f} | {r['ms_p99']:>8.3f} | {r['ms_std']:>8.3f} | {r['fps']:>8.2f}")
 
     print("\n" + "=" * 86 + "\n")

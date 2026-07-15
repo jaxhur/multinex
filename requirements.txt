@@ -1,0 +1,25 @@
+# Install the CUDA-compatible torch/torchvision build separately on the server.
+addict
+einops
+future
+gdown
+h5py
+joblib
+lmdb
+lpips
+matplotlib
+natsort
+numpy
+opencv-python
+pytorch-msssim
+PyYAML
+requests
+scikit-image
+scikit-learn
+scipy
+tensorboard
+thop
+timm
+tqdm
+yacs
+yapf

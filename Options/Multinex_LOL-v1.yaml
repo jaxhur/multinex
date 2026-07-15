@@ -11,8 +11,8 @@ datasets:
   train:
     name: TrainSet
     type: Dataset_PairedImage
-    dataroot_gt: data/LOLv1/Train/target
-    dataroot_lq: data/LOLv1/Train/input
+    dataroot_gt: data/LOL-v1/our485/high
+    dataroot_lq: data/LOL-v1/our485/low
     geometric_augs: true
 
     filename_tmpl: '{}'
@@ -44,8 +44,8 @@ datasets:
   val:
     name: ValSet
     type: Dataset_PairedImage
-    dataroot_gt: data/LOLv1/Test/target
-    dataroot_lq: data/LOLv1/Test/input
+    dataroot_gt: data/LOL-v1/eval15/high
+    dataroot_lq: data/LOL-v1/eval15/low
     io_backend:
       type: disk
 
@@ -157,6 +157,10 @@ val:
   metrics:
     psnr: # metric name, can be arbitrary
       type: calculate_psnr
+      crop_border: 0
+      test_y_channel: false
+    ssim:
+      type: calculate_ssim
       crop_border: 0
       test_y_channel: false
 

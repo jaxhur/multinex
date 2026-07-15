@@ -221,9 +221,13 @@ class BaseModel():
             param_key (str | list[str]): The parameter key(s) to save network.
                 Default: 'params'.
         """
-        if current_iter == -1:
-            current_iter = 'latest'
-        save_filename = f'{net_label}_{current_iter}.pth'
+        if net_label == 'net_g':
+            save_filename = ('latest_G.pth' if current_iter == -1 else
+                             f'{current_iter}_G.pth')
+        else:
+            if current_iter == -1:
+                current_iter = 'latest'
+            save_filename = f'{net_label}_{current_iter}.pth'
         save_path = os.path.join(self.opt['path']['models'], save_filename)
 
         net = net if isinstance(net, list) else [net]

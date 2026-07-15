@@ -4,7 +4,6 @@ from collections import OrderedDict
 from copy import deepcopy
 from os import path as osp
 from tqdm import tqdm
-import glob
 
 from basicsr.models.archs import define_network
 from basicsr.models.base_model import BaseModel
@@ -319,7 +318,10 @@ class ImageCleanModel(BaseModel):
         if with_metrics:
             for metric in self.metric_results.keys():
                 self.metric_results[metric] /= cnt
-                current_metric = self.metric_results[metric]
+            # Training selects best checkpoints by PSNR even when additional
+            # validation metrics such as RGB SSIM are enabled.
+            current_metric = self.metric_results.get(
+                'psnr', next(iter(self.metric_results.values())))
 
             self._log_validation_metric_values(current_iter, dataset_name,
                                                tb_logger)
@@ -330,7 +332,7 @@ class ImageCleanModel(BaseModel):
         log_str = f'Validation {dataset_name},\t'
         for metric, value in self.metric_results.items():
             log_str += f'\t # {metric}: {value:.4f}'
-        logger = get_root_logger()
+        logger = get_root_logger(logger_name='val')
         logger.info(log_str)
         if tb_logger:
             for metric, value in self.metric_results.items():
@@ -344,7 +346,8 @@ class ImageCleanModel(BaseModel):
             out_dict['gt'] = self.gt.detach().cpu()
         return out_dict
 
-    def save(self, epoch, current_iter, **kwargs):
+    def _save_generator_network(self, current_iter):
+        """Save generator parameters using the shared checkpoint convention."""
         if self.ema_decay > 0:
             self.save_network([self.net_g, self.net_g_ema],
                               'net_g',
@@ -352,35 +355,22 @@ class ImageCleanModel(BaseModel):
                               param_key=['params', 'params_ema'])
         else:
             self.save_network(self.net_g, 'net_g', current_iter)
+
+    def save(self, epoch, current_iter, **kwargs):
+        """Save periodic/latest generator weights and the resumable state."""
+        self._save_generator_network(current_iter)
+        if current_iter != -1:
+            # Keep a stable latest_G.pth alongside the numbered checkpoint.
+            self._save_generator_network(-1)
         self.save_training_state(epoch, current_iter, **kwargs)
 
     def save_best(self, best_metric, param_key='params'):
-        psnr = best_metric['psnr']
-        cur_iter = best_metric['iter']
-        save_filename = f'best_psnr_{psnr:.2f}_{cur_iter}.pth'
-        exp_root = self.opt['path']['experiments_root']
-        save_path = os.path.join(
-            self.opt['path']['experiments_root'], save_filename)
-
-        if not os.path.exists(save_path):
-            for r_file in glob.glob(f'{exp_root}/best_*'):
-                os.remove(r_file)
-            net = self.net_g
-
-            net = net if isinstance(net, list) else [net]
-            param_key = param_key if isinstance(
-                param_key, list) else [param_key]
-            assert len(net) == len(
-                param_key), 'The lengths of net and param_key should be the same.'
-
-            save_dict = {}
-            for net_, param_key_ in zip(net, param_key):
-                net_ = self.get_bare_model(net_)
-                state_dict = net_.state_dict()
-                for key, param in state_dict.items():
-                    if key.startswith('module.'):  # remove unnecessary 'module.'
-                        key = key[7:]
-                    state_dict[key] = param.cpu()
-                save_dict[param_key_] = state_dict
-
-            torch.save(save_dict, save_path)
+        """Overwrite models/best_G.pth when validation PSNR improves."""
+        net = self.get_bare_model(self.net_g)
+        state_dict = net.state_dict()
+        for key, param in state_dict.items():
+            if key.startswith('module.'):  # remove unnecessary 'module.'
+                key = key[7:]
+            state_dict[key] = param.cpu()
+        save_path = os.path.join(self.opt['path']['models'], 'best_G.pth')
+        torch.save({param_key: state_dict}, save_path)

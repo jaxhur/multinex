@@ -68,10 +68,17 @@ def parse_options(is_train=True):
 
 
 def init_loggers(opt):
-    log_file = osp.join(opt['path']['log'],
-                        f"train_{opt['name']}_{get_time_str()}.log")
+    log_dir = osp.join(opt['path']['log'], 'logs')
+    os.makedirs(log_dir, exist_ok=True)
+    log_file = osp.join(log_dir, 'train.log')
     logger = get_root_logger(
         logger_name='basicsr', log_level=logging.INFO, log_file=log_file)
+    # Validation uses a dedicated logger so terminal messages and val.log share
+    # exactly the same formatted message without mixing in training progress.
+    get_root_logger(
+        logger_name='val',
+        log_level=logging.INFO,
+        log_file=osp.join(log_dir, 'val.log'))
     log_file = osp.join(opt['path']['log'],
                         f"metric.csv")
     logger_metric = get_root_logger(logger_name='metric',
@@ -207,6 +214,8 @@ def main():
         start_epoch = resume_state['epoch']
         current_iter = resume_state['iter']
         best_metric = resume_state['best_metric']
+        for metric_name in opt['val']['metrics']:
+            best_metric.setdefault(metric_name, 0)
         best_psnr = best_metric['psnr']
         best_iter = best_metric['iter']
         logger.info(f'best psnr: {best_psnr} from iteration {best_iter}')
@@ -333,12 +342,16 @@ def main():
                                                   opt['val']['save_img'], rgb2bgr, use_image)
                 # log cur metric to csv file
                 logger_metric = get_root_logger(logger_name='metric')
-                metric_str = f'{current_iter},{current_metric}'
+                current_metrics = dict(model.metric_results)
+                metric_values = ','.join(
+                    str(current_metrics[name]) for name in opt['val']['metrics'])
+                metric_str = f'{current_iter},{metric_values}'
                 logger_metric.info(metric_str)
 
                 # log best metric
-                if best_metric['psnr'] < current_metric:
-                    best_metric['psnr'] = current_metric
+                current_psnr = current_metrics['psnr']
+                if best_metric['psnr'] < current_psnr:
+                    best_metric.update(current_metrics)
                     # save best model
                     best_metric['iter'] = current_iter
                     model.save_best(best_metric)
@@ -363,8 +376,10 @@ def main():
     logger.info('Save the latest model.')
     model.save(epoch=-1, current_iter=-1)  # -1 stands for the latest
     if opt.get('val') is not None:
+        rgb2bgr = opt['val'].get('rgb2bgr', True)
+        use_image = opt['val'].get('use_image', True)
         model.validation(val_loader, current_iter, tb_logger,
-                         opt['val']['save_img'])
+                         opt['val']['save_img'], rgb2bgr, use_image)
     if tb_logger:
         tb_logger.close()
 
