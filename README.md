@@ -147,9 +147,7 @@ python Enhancement/test.py --opt Options/Multinex_LOL-v1.yaml --weights pretrain
 
 - **Note:** For best results, use  `val.val_freq: 5` in the yaml configs under `Options/` directory.
 
-```
 
-```
 
 
 
@@ -159,7 +157,7 @@ python Enhancement/test.py --opt Options/Multinex_LOL-v1.yaml --weights pretrain
 
 - batch_size = 8
 - patch_size =256
-- 5080：耗时不太准，显示要18h，但是实际上也不一定，感觉差不多要在12h
+- 5080：差不多要在14h
 
 ```
 # Multinex on LOL-v1
@@ -178,10 +176,14 @@ python -m basicsr.train --opt Options/MultinexNano_LOLv1.yaml
 - FLOPS(G)：
 
 ```
+# 标准
 python Enhancement/test.py --opt Options/Multinex_LOL-v1.yaml --weights experiments/Multinex_LOL-v1/models/best_G.pth --dataset LOL_v1
 
 # nano
 python Enhancement/test.py --opt Options/MultinexNano_LOLv1.yaml --weights pretrained_weights/MultinexNano_LOLv1.pth --dataset LOL_v1
+
+#预训练权重
+python Enhancement/test.py --opt Options/Multinex_LOL-v1.yaml --weights pretrained_weights/Multinex_LOL-v1.pth --dataset LOL_v1
 ```
 
 
@@ -215,6 +217,10 @@ python Enhancement/test.py --opt Options/Multinex_LOL-v2-real.yaml --weights pre
 
 # nano
 python Enhancement/test.py --opt Options/MultinexNano_LOL-v2-real.yaml --weights pretrained_weights/MultinexNano_LOLv2_real.pth --dataset LOL_v2_real
+
+
+#预训练权重
+python Enhancement/test.py --opt Options/Multinex_LOL-v2-real.yaml --weights pretrained_weights/Multinex_LOL-v2-real.pth --dataset LOL_v2_real
 ```
 
 
@@ -250,6 +256,9 @@ python Enhancement/test.py --opt Options/Multinex_LOL-v2-syn.yaml --weights pret
 
 # nano
 python Enhancement/test.py --opt Options/MultinexNano_LOL-v2-synthetic.yaml --weights pretrained_weights/MultinexNano_LOLv2_syn.pth --dataset LOL_v2_synthetic
+
+# 预训练权重
+python Enhancement/test.py --opt Options/Multinex_LOL-v2-syn.yaml --weights pretrained_weights/Multinex_LOL-v2-syn.pth --dataset LOL_v2_synthetic
 ```
 
 
