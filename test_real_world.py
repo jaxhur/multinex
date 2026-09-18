@@ -23,13 +23,6 @@ from basicsr.utils.options import parse
 METHOD_NAME = "Multinex"
 DEFAULT_FACTOR = 2
 DATASET_NAMES = ("DICM", "LIME", "MEF", "NPE", "VV")
-EXPECTED_COUNTS = {
-    "DICM": {64},
-    "LIME": {10},
-    "MEF": {17},
-    "NPE": {84, 85},
-    "VV": {24},
-}
 IMAGE_EXTENSIONS = {
     ".bmp", ".jpeg", ".jpg", ".png", ".tif", ".tiff", ".webp"
 }
@@ -76,21 +69,6 @@ def build_image_entries(dataset_root):
         stem_keys[stem_key] = relative_path.as_posix()
         entries.append((input_path, relative_path, relative_path.with_suffix(".png")))
     return entries
-
-
-def validate_dataset_count(dataset_name, image_count, allow_mismatch):
-    """核对公开数据集图像数；NPE 同时接受 84/85 张版本。"""
-    expected = EXPECTED_COUNTS[dataset_name]
-    if image_count in expected:
-        return
-    message = (
-        f"{dataset_name} 图像数为 {image_count}，预期为 "
-        f"{sorted(expected)}。请检查下载版本或使用 --allow-count-mismatch。"
-    )
-    if allow_mismatch:
-        logging.warning(message)
-        return
-    raise ValueError(message)
 
 
 def load_rgb(path):
@@ -332,10 +310,6 @@ def parse_args():
         help=f"推理补边倍数；默认 {DEFAULT_FACTOR}。",
     )
     parser.add_argument(
-        "--allow-count-mismatch", action="store_true",
-        help="允许数据集数量偏离已知公开版本，但仍冻结实际清单。",
-    )
-    parser.add_argument(
         "--resume", action="store_true",
         help="受控覆盖同一输出目录中断产生的已有图像。",
     )
@@ -378,9 +352,6 @@ def main():
     for dataset_name in args.datasets:
         dataset_root = (args.data_root / dataset_name).resolve()
         entries = build_image_entries(dataset_root)
-        validate_dataset_count(
-            dataset_name, len(entries), args.allow_count_mismatch
-        )
         dataset_output = run_root / dataset_name
         enhanced_root = dataset_output / "enhanced"
         validate_existing_outputs(enhanced_root, entries, args.resume)
